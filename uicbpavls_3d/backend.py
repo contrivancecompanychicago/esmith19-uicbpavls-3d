@@ -238,7 +238,8 @@ def samsung_xr_diabetes_analysis(payload: XRResearchRequest) -> dict[str, Any]:
         beta_cell_stress=payload.beta_cell_stress,
     )
 
-    save_analysis(payload.model_dump(), base_profile)
+    payload_dict = payload.dict() if hasattr(payload, "dict") else payload.model_dump()
+    save_analysis(payload_dict, base_profile)
 
     return {
         "platform": "Samsung XR",

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List
 
 
@@ -141,14 +141,10 @@ class DetailedDiabetesPathwayModel:
         for index, node in enumerate(nodes):
             x, y, z = node.coordinates
             script_lines.append(
-                f"cmd.sphere('({x},{y},{z})', color={node.color!r}, radius={node.weight + 0.25})"
+                f"cmd.sphere('( {x},{y},{z} )', color='{node.color}', radius={node.weight + 0.25})"
             )
-            script_lines.append(
-                f"cmd.label('({x},{y},{z})', '{node.name}')"
-            )
-            script_lines.append(
-                f"cmd.set_name('obj{index}', '{node.name}')"
-            )
+            script_lines.append(f"cmd.label('( {x},{y},{z} )', '{node.name}')")
+            script_lines.append(f"cmd.set_name('obj{index}', '{node.name}')")
 
         script_lines.append("cmd.orient()")
         script_lines.append("cmd.zoom()")
