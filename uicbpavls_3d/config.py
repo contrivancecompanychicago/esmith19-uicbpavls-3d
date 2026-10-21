@@ -16,6 +16,9 @@ class LabConfig:
     app_name: str = "3D Bioprocessing Automation Lab"
     run_state: str = "PREFLIGHT"
     data_classification: str = "SIMULATED"
+    samsung_xr_enabled: bool = True
+    samsung_xr_platform: str = "Samsung XR"
+    research_focus: str = "Molecular basis of diabetes disease pathways"
     temperature_c: float = 37.0
     ph: float = 7.40
     protein: str = "Albumin"
@@ -34,6 +37,9 @@ class LabConfig:
             "app_name": self.app_name,
             "run_state": self.run_state,
             "data_classification": self.data_classification,
+            "samsung_xr_enabled": self.samsung_xr_enabled,
+            "samsung_xr_platform": self.samsung_xr_platform,
+            "research_focus": self.research_focus,
             "temperature_c": self.temperature_c,
             "ph": self.ph,
             "protein": self.protein,
