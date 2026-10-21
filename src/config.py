@@ -6,9 +6,10 @@ PROJECT = "UIC_PAVLS"
 MODULE = "M1"
 BENCH = "M1A"
 EXPERIMENT = "E001"
-VERSION = "0.1"
+VERSION = "0"
 RUN_STATE = "PREFLIGHT"
 DATA_CLASSIFICATION = "SIMULATED"
+APP_NAME = "3D Bioprocessing Automation Lab"
 
 LAB = {
     "temperature_c": 37.0,
