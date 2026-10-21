@@ -1,0 +1,54 @@
+# esmith19-uicbpavls-3d
+
+3D Bioprocessing Automation Lab for Type 2 Diabetes Research.
+
+Version: 0
+
+This repository now includes a Python package for the laboratory workflow logic, including configuration, sample manifest generation, assay simulation, quality-control checks, and result export.
+
+## Overview
+
+The project models a small early-glycation assay workflow for research simulation in a 3D bioprocessing automation lab. It provides:
+
+- project metadata and lab configuration
+- sample manifest generation
+- simulated glycation kinetics
+- optical assay signal generation
+- QC validation
+- CSV and JSON export for analysis artifacts
+
+## Package structure
+
+- `uicbpavls_3d/` — installable Python package
+- `src/` — legacy module compatibility layer
+- `pyproject.toml` — packaging metadata and dependencies
+
+## Installation
+
+```bash
+python -m pip install .
+```
+
+## Quick start
+
+```python
+from uicbpavls_3d import DiabetesResearchBackend
+
+backend = DiabetesResearchBackend()
+manifest = backend.run_assay_workflow()
+paths = backend.export_results(manifest)
+print(paths)
+print(manifest.head())
+```
+
+## Example output
+
+The workflow generates a sample manifest and exports results to the `data/results` directory by default.
+
+## Repository version
+
+The project has been declared as version 0 in the configuration and package metadata.
+
+## Notes
+
+This repository is intentionally designed as a research-oriented simulation and workflow scaffold, suitable for extension with live instrument APIs, visualization dashboards, or a web backend.

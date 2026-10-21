@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "esmith19-uicbpavls-3d"
+version = "0"
+description = "3D Bioprocessing Automation Lab for Type 2 Diabetes Research"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Contrivance Company Chicago" }
+]
+license = { text = "Apache-2.0" }
+keywords = ["diabetes", "bioprocessing", "automation", "research", "assay", "qc"]
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/contrivancecompanychicago/esmith19-uicbpavls-3d"
+Repository = "https://github.com/contrivancecompanychicago/esmith19-uicbpavls-3d.git"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["uicbpavls_3d*"]
