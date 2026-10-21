@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Samsung XR Molecular Diabetes Atlas</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --panel: #161b22;
+        --panel-alt: #1f2630;
+        --accent: #7dd3fc;
+        --good: #34d399;
+        --warn: #fbbf24;
+        --danger: #f87171;
+        --text: #e5e7eb;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(135deg, #0d1117, #111827);
+        color: var(--text);
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px 80px;
+      }
+      .hero {
+        background: rgba(17, 24, 39, 0.9);
+        border: 1px solid rgba(125, 211, 252, 0.25);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.2);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 24px;
+        margin-top: 24px;
+      }
+      .panel {
+        background: var(--panel);
+        border-radius: 16px;
+        box-shadow: inset 0 0 8px rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.08);
+        padding: 18px;
+      }
+      .metric {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 12px 0;
+      }
+      .bar {
+        position: relative;
+        width: 100%;
+        height: 14px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .fill {
+        height: 100%;
+        border-radius: 10px;
+        background: linear-gradient(90deg, var(--good), var(--warn), var(--danger));
+      }
+      .signal-list {
+        margin-top: 18px;
+      }
+      .signal {
+        background: var(--panel-alt);
+        padding: 12px 14px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+      }
+      .chip {
+        display: inline-block;
+        background: rgba(125, 211, 252, 0.15);
+        color: var(--accent);
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+      button {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        border: none;
+        padding: 12px 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: rgba(17,24,39,0.75);
+        padding: 14px;
+        border-radius: 12px;
+      }
+      @media (max-width: 820px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="hero">
+        <div class="chip">Samsung XR • Molecular Diabetes Atlas</div>
+        <h1>3D Molecular Basis of Diabetes Disease Research</h1>
+        <p>Immersive pathway review for beta-cell stress, insulin resistance, inflammatory signaling, and glycation burden.</p>
+        <button id="runButton">Generate XR disease profile</button>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>Risk overview</h2>
+          <div class="metric">
+            <span>Risk index</span>
+            <strong id="riskIndex">0.000</strong>
+          </div>
+          <div class="bar"><div id="riskFill" class="fill" style="width: 0%"></div></div>
+
+          <div class="signal-list" id="signalList"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Pathway summary</h2>
+          <div id="summaryText">Loading path model...</div>
+          <h3 style="margin-top: 20px;">PyMOL-ready script</h3>
+          <pre id="pymolOutput">No output yet.</pre>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function fetchProfile() {
+        const payload = {
+          patient_id: 'T2D-001',
+          glucose_mg_dL: 180,
+          hba1c_pct: 7.4,
+          insulin_resistance_index: 0.72,
+          inflammatory_load: 0.68,
+          beta_cell_stress: 0.74
+        };
+
+        try {
+          const response = await fetch('/xr/diabetes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+
+          const risk = Number(result.analysis.risk_index || 0);
+          document.getElementById('riskIndex').textContent = risk.toFixed(3);
+          document.getElementById('riskFill').style.width = `${Math.min(risk * 100, 100)}%`;
+
+          const signalList = document.getElementById('signalList');
+          signalList.innerHTML = '';
+          for (const signal of result.analysis.signals || []) {
+            const row = document.createElement('div');
+            row.className = 'signal';
+            row.innerHTML = `
+              <strong>${signal.pathway}</strong><br />
+              <small>${signal.biomarker}</small><br />
+              <div class="metric"><span>Signal</span><strong>${Number(signal.signal_value).toFixed(3)}</strong></div>
+              <div class="bar"><div class="fill" style="width:${Math.min(Number(signal.signal_value) * 100, 100)}%"></div></div>
+              <div>${signal.interpretation}</div>
+            `;
+            signalList.appendChild(row);
+          }
+
+          const summaryText = document.getElementById('summaryText');
+          summaryText.textContent = result.analysis.scene.annotation.summary + ' ' + result.analysis.scene.annotation.recommendation;
+
+          const pymolOutput = document.getElementById('pymolOutput');
+          pymolOutput.textContent = result.molecular_model.pymol_script || 'No PyMOL script available.';
+        } catch (error) {
+          console.error(error);
+          document.getElementById('summaryText').textContent = 'The XR model could not be generated.';
+        }
+      }
+
+      document.getElementById('runButton').addEventListener('click', fetchProfile);
+      fetchProfile();
+    </script>
+  </body>
+</html>

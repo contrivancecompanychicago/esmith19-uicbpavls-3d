@@ -9,9 +9,12 @@ from typing import Any, Optional
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .config import DEFAULT_CONFIG, LabConfig
+from .database import get_recent_analyses, init_db, save_analysis
+from .molecular_model import DetailedDiabetesPathwayModel
 from .samsung_xr import build_diabetes_xr_profile
 
 __version__ = "0"
@@ -146,9 +149,14 @@ class DiabetesResearchBackend(LabBackend):
 
 app = FastAPI(
     title="3D Bioprocessing Automation Lab",
-    description="Type 2 Diabetes Research backend plus Samsung XR molecular disease modeling.",
+    description="Type 2 Diabetes Research backend with Samsung XR molecular modeling and database integration.",
     version=__version__,
 )
+
+
+@app.on_event("startup")
+def startup_event() -> None:
+    init_db()
 
 
 @app.get("/")
@@ -164,6 +172,17 @@ def healthcheck() -> dict[str, str]:
 @app.get("/config")
 def get_lab_config() -> dict[str, Any]:
     return DEFAULT_CONFIG.as_dict
+
+
+@app.get("/xr/view")
+def xr_view() -> FileResponse:
+    viewer_path = Path(__file__).resolve().parent / "static" / "xr_viewer.html"
+    return FileResponse(viewer_path)
+
+
+@app.get("/xr/records")
+def xr_records() -> dict[str, Any]:
+    return {"records": get_recent_analyses(limit=20)}
 
 
 @app.post("/simulate")
@@ -201,7 +220,7 @@ def export_assay(payload: AssayRequest) -> dict[str, Any]:
 
 @app.post("/xr/diabetes")
 def samsung_xr_diabetes_analysis(payload: XRResearchRequest) -> dict[str, Any]:
-    profile = build_diabetes_xr_profile(
+    base_profile = build_diabetes_xr_profile(
         patient_id=payload.patient_id,
         glucose_mg_dL=payload.glucose_mg_dL,
         hba1c_pct=payload.hba1c_pct,
@@ -209,10 +228,23 @@ def samsung_xr_diabetes_analysis(payload: XRResearchRequest) -> dict[str, Any]:
         inflammatory_load=payload.inflammatory_load,
         beta_cell_stress=payload.beta_cell_stress,
     )
+
+    detailed_model = DetailedDiabetesPathwayModel(patient_id=payload.patient_id)
+    detailed_profile = detailed_model.build_profile(
+        glucose_mg_dL=payload.glucose_mg_dL,
+        hba1c_pct=payload.hba1c_pct,
+        insulin_resistance_index=payload.insulin_resistance_index,
+        inflammatory_load=payload.inflammatory_load,
+        beta_cell_stress=payload.beta_cell_stress,
+    )
+
+    save_analysis(payload.model_dump(), base_profile)
+
     return {
         "platform": "Samsung XR",
         "focus": "Molecular basis of diabetes disease research",
-        "analysis": profile,
+        "analysis": base_profile,
+        "molecular_model": detailed_profile,
     }
 
 
