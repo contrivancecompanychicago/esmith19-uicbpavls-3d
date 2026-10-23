@@ -4,7 +4,7 @@
 
 Version: 0
 
-This repository contains a Python package and FastAPI backend for diabetes-focused bioprocessing automation research, including Samsung XR molecular disease modeling for the molecular basis of diabetes.
+This repository contains the initial public release (version 0) of a Python package and FastAPI backend for diabetes-focused bioprocessing automation research, including Samsung XR molecular disease modeling for the molecular basis of diabetes, assay simulation, and research data management.
 
 ## Overview
 
@@ -131,8 +131,8 @@ This allows persistence of patient analyses, risk scoring, and pathway summaries
 
 ## Repository version
 
-The project is declared as version 0 and includes Samsung XR-enabled molecular disease research, PyMOL-ready pathway modeling, HTML/XR visualization, and database-backed storage for type 2 diabetes workflows.
+This repository is the initial release of a research-oriented framework for diabetes-focused bioprocessing automation, immersive XR analysis, and structured data capture. It includes Samsung XR-enabled molecular disease modeling, PyMOL-ready pathway generation, HTML/XR visualization, and SQLite-backed storage for type 2 diabetes investigations.
 
 ## Notes
 
-This repository is structured as a research-oriented simulation and automation scaffold, suitable for extension with live instrument integrations, immersive XR scenes, richer molecular pathway logic, and downstream analytics workflows.
+This repository is structured as a research-oriented simulation and automation scaffold, suitable for extension with live instrument integrations, immersive XR scenes, richer molecular pathway logic, and additional analytical workflows for exploratory diabetes research.
