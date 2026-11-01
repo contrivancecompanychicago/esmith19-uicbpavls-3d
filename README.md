@@ -4,11 +4,11 @@
 
 Version: 0
 
-This repository contains the initial public release (version 0) of a Python package and FastAPI backend for diabetes-focused bioprocessing automation research, including Samsung XR molecular disease modeling for the molecular basis of diabetes, assay simulation, and research data management.
+This repository contains a Python package and FastAPI backend for diabetes-focused bioprocessing automation research, including assay simulation, SQLite-backed research record storage, Samsung XR molecular disease analysis, and an experimental microscope integration layer based on the open-source MicroscoPy hardware concept.
 
 ## Overview
 
-The project models an early-glycation assay workflow for a 3D bioprocessing automation lab. It provides:
+The project models an early-glycation assay workflow in a 3D bioprocessing automation lab. It provides:
 
 - lab configuration and metadata
 - sample manifest generation
@@ -21,6 +21,20 @@ The project models an early-glycation assay workflow for a 3D bioprocessing auto
 - detailed molecular pathway modeling with PyMOL-ready output
 - HTML/XR visualization layer
 - SQLite database integration for stored research records
+- a simulated microscope integration layer that can later be upgraded to real Raspberry Pi / Arduino hardware
+
+## Microscope integration note
+
+This repo now includes a microscope abstraction designed around the MicroscoPy hardware concept, without requiring Raspberry Pi or serial hardware support yet.
+
+The current implementation is intentionally simulation-first so you can:
+
+- validate the API contract
+- test the workflow end-to-end
+- capture metadata to the project database
+- connect microscope capture into research automation without physical hardware
+
+The integration is structured as a hardware adapter layer, so the real hardware path can be added later with minimal disruption to the existing application.
 
 ## Samsung XR diabetes research integration
 
@@ -41,7 +55,9 @@ This research layer supports review of:
 - `src/` — legacy module compatibility layer
 - `uicbpavls_3d/static/xr_viewer.html` — HTML/XR visualization layer
 - `uicbpavls_3d/molecular_model.py` — detailed molecular pathway model + PyMOL script generation
-- `uicbpavls_3d/database.py` — SQLite storage for diabetes analyses
+- `uicbpavls_3d/database.py` — SQLite storage for diabetes analyses and microscope captures
+- `uicbpavls_3d/microscope/` — microscope adapter, controller, and capture handling
+- `examples/microscope_python_example.py` — minimal simulated microscope usage examples
 - `pyproject.toml` — packaging metadata and dependencies
 
 ## Installation
@@ -90,7 +106,13 @@ Available endpoints:
 - `GET /config` — lab configuration
 - `GET /xr/view` — HTML/XR visualization page
 - `GET /xr/records` — recent stored diabetic XR analyses
+- `GET /microscope/status` — microscope adapter status
+- `GET /microscope/records` — recent stored microscope captures
 - `POST /simulate` — simulate the assay workflow
+- `POST /assay/with-microscope` — run assay logic and automatically capture a microscope image in simulated mode
+- `POST /microscope/capture` — direct microscope capture request
+- `POST /microscope/move` — move the stage/focus axis in simulated mode
+- `POST /microscope/auto-focus` — run autofocusing in simulated mode
 - `POST /export` — generate CSV and JSON exports
 - `POST /xr/diabetes` — Samsung XR molecular diabetes analysis
 
@@ -109,11 +131,91 @@ curl -X POST http://127.0.0.1:8000/xr/diabetes \
   }'
 ```
 
+Example direct microscope capture request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/microscope/capture \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sample_id": "sample-001",
+    "assay_run_id": "assay-001",
+    "mode": "simulated",
+    "camera_resolution": "1920x1080",
+    "metadata": {
+      "experiment": "E001",
+      "bench": "M1A",
+      "notes": "initial simulated microscope validation"
+    }
+  }'
+```
+
+Example assay-with-capture request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/assay/with-microscope \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sample_id": "sample-001",
+    "assay_run_id": "assay-workflow-001",
+    "glucose_levels": [90, 140, 200],
+    "time_points": [0, 30, 60],
+    "replicates": [1],
+    "temperature_c": 37.0,
+    "ph": 7.4,
+    "output_dir": "data/results",
+    "capture_enabled": true,
+    "microscope_mode": "simulated",
+    "microscope_output_dir": "data/microscope",
+    "metadata": {
+      "source": "demo",
+      "run_label": "example"
+    }
+  }'
+```
+
+## Minimal Python example
+
+A minimal example script is available at:
+
+```text
+examples/microscope_python_example.py
+```
+
+It demonstrates how to call the simulated microscope endpoints from Python without requiring Raspberry Pi hardware.
+
+```python
+import requests
+
+base_url = "http://127.0.0.1:8000"
+
+payload = {
+    "sample_id": "sample-001",
+    "assay_run_id": "assay-workflow-001",
+    "glucose_levels": [90, 140, 200],
+    "time_points": [0, 30, 60],
+    "replicates": [1],
+    "temperature_c": 37.0,
+    "ph": 7.4,
+    "output_dir": "data/results",
+    "capture_enabled": True,
+    "microscope_mode": "simulated",
+    "microscope_output_dir": "data/microscope",
+    "metadata": {
+        "source": "example-script",
+        "run_label": "demo",
+    },
+}
+
+response = requests.post(f"{base_url}/assay/with-microscope", json=payload, timeout=30)
+print(response.status_code)
+print(response.json())
+```
+
 ## HTML/XR visualization
 
 Open the visualization page in a browser:
 
-```bash
+```text
 http://127.0.0.1:8000/xr/view
 ```
 
@@ -121,18 +223,20 @@ The viewer renders a risk index, pathway signal cards, and a PyMOL-ready script 
 
 ## Database integration
 
-The backend stores diabetes XR analysis records in SQLite at:
+The backend stores diabetes XR analysis records and microscope capture records in SQLite at:
 
 ```text
 data/diabetes_xr.db
 ```
 
-This allows persistence of patient analyses, risk scoring, and pathway summaries for later review.
+This allows persistence of patient analyses, risk scoring, pathway summaries, and microscope image metadata for later review.
 
 ## Repository version
 
-This repository is the initial release of a research-oriented framework for diabetes-focused bioprocessing automation, immersive XR analysis, and structured data capture. It includes Samsung XR-enabled molecular disease modeling, PyMOL-ready pathway generation, HTML/XR visualization, and SQLite-backed storage for type 2 diabetes investigations.
+This repository is an initial release of a research-oriented framework for diabetes-focused bioprocessing automation, immersive XR analysis, and structured data capture. It includes Samsung XR-enabled molecular modeling and a microscope integration layer intended for future hardware deployment.
 
 ## Notes
 
-This repository is structured as a research-oriented simulation and automation scaffold, suitable for extension with live instrument integrations, immersive XR scenes, richer molecular pathway logic, and additional analytical workflows for exploratory diabetes research.
+This repository is structured as a research-oriented simulation and automation scaffold, suitable for extension with live instrument APIs, visualization dashboards, richer molecular pathway logic, or real microscope hardware integration.
+
+The microscope interface is intentionally separated from the assay pipeline so physical hardware can be added later without rewriting the rest of the project.
