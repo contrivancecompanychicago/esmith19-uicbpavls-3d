@@ -3,7 +3,44 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Any, Dict, List
+
+
+@dataclass(frozen=True)
+class MicroscopeConfig:
+    """Reference integration configuration for the MicroscoPy hardware stack."""
+
+    enabled: bool = True
+    mode: str = "simulated"
+    device_name: str = "MicroscoPy"
+    serial_port: str = "/dev/ttyACM0"
+    camera_resolution: str = "1920x1080"
+    output_dir: str = "data/microscope"
+    focus_steps: int = 50
+    magnification: float = 1.0
+    illumination_level: int = 128
+    objective: str = "custom"
+    sample_stage: str = "manual"
+    auto_focus_enabled: bool = True
+    notes: str = "Microscope adapter for the open-source MicroscoPy reference build."
+
+    @property
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "mode": self.mode,
+            "device_name": self.device_name,
+            "serial_port": self.serial_port,
+            "camera_resolution": self.camera_resolution,
+            "output_dir": self.output_dir,
+            "focus_steps": self.focus_steps,
+            "magnification": self.magnification,
+            "illumination_level": self.illumination_level,
+            "objective": self.objective,
+            "sample_stage": self.sample_stage,
+            "auto_focus_enabled": self.auto_focus_enabled,
+            "notes": self.notes,
+        }
 
 
 @dataclass(frozen=True)
@@ -25,6 +62,7 @@ class LabConfig:
     glucose_levels: List[int] = field(default_factory=lambda: [90, 140, 200, 300])
     time_points: List[int] = field(default_factory=lambda: [0, 30, 60, 120])
     replicates: List[int] = field(default_factory=lambda: [1])
+    microscope: MicroscopeConfig = field(default_factory=MicroscopeConfig)
 
     @property
     def as_dict(self) -> Dict[str, object]:
@@ -46,6 +84,7 @@ class LabConfig:
             "glucose_levels": self.glucose_levels,
             "time_points": self.time_points,
             "replicates": self.replicates,
+            "microscope": self.microscope.as_dict,
         }
 
 

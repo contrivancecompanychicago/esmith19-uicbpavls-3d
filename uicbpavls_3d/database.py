@@ -32,6 +32,24 @@ def init_db() -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS microscope_captures (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sample_id TEXT,
+            assay_run_id TEXT,
+            device_name TEXT,
+            mode TEXT,
+            image_path TEXT,
+            image_format TEXT,
+            focus_position REAL,
+            magnification REAL,
+            illumination_level INTEGER,
+            metadata_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -74,6 +92,43 @@ def save_analysis(payload: Dict[str, Any], profile: Dict[str, Any]) -> Dict[str,
     return {"id": row_id, "status": "saved"}
 
 
+def save_microscope_capture(record: Dict[str, Any]) -> Dict[str, Any]:
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        INSERT INTO microscope_captures (
+            sample_id,
+            assay_run_id,
+            device_name,
+            mode,
+            image_path,
+            image_format,
+            focus_position,
+            magnification,
+            illumination_level,
+            metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            record.get("sample_id") or "unknown-sample",
+            record.get("assay_run_id") or "manual",
+            record.get("device_name") or "MicroscoPy",
+            record.get("mode") or "simulated",
+            record.get("image_path") or "",
+            record.get("image_format") or "ppm",
+            float(record.get("focus_position") or 0.0),
+            float(record.get("magnification") or 1.0),
+            int(record.get("illumination_level") or 128),
+            json.dumps(record.get("metadata") or {}, ensure_ascii=False),
+        ),
+    )
+    conn.commit()
+    row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.close()
+    return {"id": row_id, "status": "saved"}
+
+
 def get_recent_analyses(limit: int = 10) -> List[Dict[str, Any]]:
     init_db()
     conn = sqlite3.connect(DB_PATH)
@@ -104,6 +159,41 @@ def get_recent_analyses(limit: int = 10) -> List[Dict[str, Any]]:
                 "inflammatory_load": row[8],
                 "beta_cell_stress": row[9],
                 "pathway_summary": json.loads(row[10]) if row[10] else [],
+                "created_at": row[11],
+            }
+        )
+    return records
+
+
+def get_recent_captures(limit: int = 10) -> List[Dict[str, Any]]:
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.execute(
+        """
+        SELECT id, sample_id, assay_run_id, device_name, mode, image_path, image_format,
+               focus_position, magnification, illumination_level, metadata_json, created_at
+        FROM microscope_captures ORDER BY id DESC LIMIT ?
+        """,
+        (limit,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    records = []
+    for row in rows:
+        records.append(
+            {
+                "id": row[0],
+                "sample_id": row[1],
+                "assay_run_id": row[2],
+                "device_name": row[3],
+                "mode": row[4],
+                "image_path": row[5],
+                "image_format": row[6],
+                "focus_position": row[7],
+                "magnification": row[8],
+                "illumination_level": row[9],
+                "metadata": json.loads(row[10]) if row[10] else {},
                 "created_at": row[11],
             }
         )

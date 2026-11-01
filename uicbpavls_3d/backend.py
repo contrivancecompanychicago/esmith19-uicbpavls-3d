@@ -13,8 +13,9 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .config import DEFAULT_CONFIG, LabConfig
-from .database import get_recent_analyses, init_db, save_analysis
+from .database import get_recent_analyses, get_recent_captures, init_db, save_analysis, save_microscope_capture
 from .molecular_model import DetailedDiabetesPathwayModel
+from .microscope import MicroscopeAdapter, MicroscopeConfig
 from .samsung_xr import build_diabetes_xr_profile
 
 __version__ = "0"
@@ -71,6 +72,21 @@ class XRResearchRequest(BaseModel):
     insulin_resistance_index: float = 0.72
     inflammatory_load: float = 0.68
     beta_cell_stress: float = 0.74
+
+
+class MicroscopeCaptureRequest(BaseModel):
+    sample_id: str = "sample-001"
+    assay_run_id: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    mode: str | None = None
+    camera_resolution: str | None = None
+    output_dir: str | None = None
+
+
+class MicroscopeMoveRequest(BaseModel):
+    axis: str = "focus"
+    steps: int = 10
+    direction: str = "positive"
 
 
 class LabBackend:
@@ -149,7 +165,7 @@ class DiabetesResearchBackend(LabBackend):
 
 app = FastAPI(
     title="3D Bioprocessing Automation Lab",
-    description="Type 2 Diabetes Research backend with Samsung XR molecular modeling and database integration.",
+    description="Type 2 Diabetes Research backend with Samsung XR molecular modeling and microscope integration.",
     version=__version__,
 )
 
@@ -183,6 +199,49 @@ def xr_view() -> FileResponse:
 @app.get("/xr/records")
 def xr_records() -> dict[str, Any]:
     return {"records": get_recent_analyses(limit=20)}
+
+
+@app.get("/microscope/status")
+def microscope_status() -> dict[str, Any]:
+    adapter = MicroscopeAdapter(DEFAULT_CONFIG.microscope)
+    return adapter.status()
+
+
+@app.get("/microscope/records")
+def microscope_records() -> dict[str, Any]:
+    return {"records": get_recent_captures(limit=20)}
+
+
+@app.post("/microscope/capture")
+def microscope_capture(payload: MicroscopeCaptureRequest) -> dict[str, Any]:
+    config = DEFAULT_CONFIG.microscope
+    if payload.mode is not None:
+        config = MicroscopeConfig(**{**config.as_dict, "mode": payload.mode})
+    if payload.camera_resolution is not None:
+        config = MicroscopeConfig(**{**config.as_dict, "camera_resolution": payload.camera_resolution})
+    if payload.output_dir is not None:
+        config = MicroscopeConfig(**{**config.as_dict, "output_dir": payload.output_dir})
+
+    adapter = MicroscopeAdapter(config)
+    result = adapter.capture(
+        sample_id=payload.sample_id,
+        assay_run_id=payload.assay_run_id,
+        metadata=payload.metadata,
+    )
+    save_microscope_capture(result["record"])
+    return result
+
+
+@app.post("/microscope/move")
+def microscope_move(payload: MicroscopeMoveRequest) -> dict[str, Any]:
+    adapter = MicroscopeAdapter(DEFAULT_CONFIG.microscope)
+    return adapter.move(axis=payload.axis, steps=payload.steps, direction=payload.direction)
+
+
+@app.post("/microscope/auto-focus")
+def microscope_auto_focus() -> dict[str, Any]:
+    adapter = MicroscopeAdapter(DEFAULT_CONFIG.microscope)
+    return adapter.auto_focus()
 
 
 @app.post("/simulate")
