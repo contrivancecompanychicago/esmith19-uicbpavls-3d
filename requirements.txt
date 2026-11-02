@@ -41,6 +41,29 @@ print(paths)
 print(manifest.head())
 ```
 
+## Bioimage quant integration
+
+This repository now includes a lightweight dependency wrapper for the bioimage_quant project, which is useful for gel, western blot, and spotting assay workflows.
+
+Install with:
+
+```bash
+python -m pip install git+https://github.com/contrivancecompanychicago/bioimage_quant.git
+```
+
+Example usage:
+
+```python
+from uicbpavls_3d import BioImageQuantAdapter
+
+adapter = BioImageQuantAdapter()
+result = adapter.analyze_image(
+    image_path="/path/to/gel_or_blot.png",
+    assay_type="western_blot",
+)
+print(result)
+```
+
 ## Example output
 
 The workflow generates a sample manifest and exports results to the `data/results` directory by default.

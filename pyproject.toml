@@ -17,7 +17,9 @@ dependencies = [
   "numpy>=1.24",
   "pandas>=2.0",
   "fastapi>=0.110.0",
-  "uvicorn>=0.29.0"
+  "uvicorn>=0.29.0",
+  "Pillow>=10.0.0",
+  "bioimage_quant @ git+https://github.com/contrivancecompanychicago/bioimage_quant.git@master",
 ]
 
 [project.urls]

@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from .bioimage_quant_adapter import BioImageQuantAdapter, list_supported_assay_types
 from .config import DEFAULT_CONFIG, LabConfig
 from .database import get_recent_analyses, get_recent_captures, init_db, save_analysis, save_microscope_capture
 from .molecular_model import DetailedDiabetesPathwayModel
@@ -87,6 +88,13 @@ class MicroscopeMoveRequest(BaseModel):
     axis: str = "focus"
     steps: int = 10
     direction: str = "positive"
+
+
+class BioImageQuantRequest(BaseModel):
+    image_path: str = "data/example.png"
+    assay_type: str = "western_blot"
+    lane_count: int = 3
+    gaussian_weighted: bool = True
 
 
 class LabBackend:
@@ -188,6 +196,22 @@ def healthcheck() -> dict[str, str]:
 @app.get("/config")
 def get_lab_config() -> dict[str, Any]:
     return DEFAULT_CONFIG.as_dict
+
+
+@app.get("/assays/types")
+def get_supported_assays() -> dict[str, list[str]]:
+    return {"supported_assay_types": list_supported_assay_types()}
+
+
+@app.post("/assays/bioimage-quant")
+def bioimage_quant_assay(payload: BioImageQuantRequest) -> dict[str, Any]:
+    adapter = BioImageQuantAdapter()
+    return adapter.analyze_image(
+        image_path=payload.image_path,
+        assay_type=payload.assay_type,
+        lane_count=payload.lane_count,
+        gaussian_weighted=payload.gaussian_weighted,
+    )
 
 
 @app.get("/xr/view")

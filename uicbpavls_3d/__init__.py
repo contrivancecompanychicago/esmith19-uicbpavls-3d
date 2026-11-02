@@ -1,6 +1,7 @@
 """3D Bioprocessing Automation Lab package."""
 
 from .backend import DiabetesResearchBackend, LabBackend
+from .bioimage_quant_adapter import BioImageQuantAdapter, list_supported_assay_types
 from .config import DEFAULT_CONFIG, LabConfig, MicroscopeConfig, get_default_config
 from .database import (
     get_recent_analyses,
@@ -23,12 +24,14 @@ __all__ = [
     "MicroscopeConfig",
     "MicroscopeSettings",
     "SamsungXRDiabetesResearch",
+    "BioImageQuantAdapter",
     "build_diabetes_xr_profile",
     "generate_pymol_script",
     "get_default_config",
     "get_recent_analyses",
     "get_recent_captures",
     "init_db",
+    "list_supported_assay_types",
     "save_analysis",
     "save_microscope_capture",
 ]
