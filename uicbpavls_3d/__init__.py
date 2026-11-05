@@ -1,39 +1,57 @@
-"""3D Bioprocessing Automation Lab package."""
+"""Tests for the isolated protein-language model module."""
 
-from .backend import DiabetesResearchBackend, LabBackend
-from .bioimage_quant_adapter import BioImageQuantAdapter, list_supported_assay_types
-from .config import DEFAULT_CONFIG, LabConfig, MicroscopeConfig, get_default_config
-from .database import (
-    get_recent_analyses,
-    get_recent_captures,
-    init_db,
-    save_analysis,
-    save_microscope_capture,
-)
-from .molecular_model import DetailedDiabetesPathwayModel, generate_pymol_script
-from .microscope import MicroscopeAdapter, MicroscopeConfig as MicroscopeSettings
-from .samsung_xr import SamsungXRDiabetesResearch, build_diabetes_xr_profile
+from __future__ import annotations
 
-__all__ = [
-    "DEFAULT_CONFIG",
-    "DetailedDiabetesPathwayModel",
-    "DiabetesResearchBackend",
-    "LabBackend",
-    "LabConfig",
-    "MicroscopeAdapter",
-    "MicroscopeConfig",
-    "MicroscopeSettings",
-    "SamsungXRDiabetesResearch",
-    "BioImageQuantAdapter",
-    "build_diabetes_xr_profile",
-    "generate_pymol_script",
-    "get_default_config",
-    "get_recent_analyses",
-    "get_recent_captures",
-    "init_db",
-    "list_supported_assay_types",
-    "save_analysis",
-    "save_microscope_capture",
-]
+import pytest
 
-__version__ = "0"
+from uicbpavls_3d.protein_language_model import ProteinLanguageModelAdapter
+from uicbpavls_3d.protein_language_model.config import ProteinLanguageModelConfig
+from uicbpavls_3d.protein_language_model.validation import validate_protein_sequence
+
+
+class MockEncoder:
+    def __init__(self):
+        self.model = object()
+
+    def encode_sequence(self, sequence: str):
+        assert sequence
+        return [0.1, 0.2, 0.3]
+
+
+def test_validate_protein_sequence_accepts_standard_amino_acids() -> None:
+    result = validate_protein_sequence("MKTAYIA")
+    assert result.is_valid is True
+    assert result.normalized_sequence == "MKTAYIA"
+    assert result.length == 7
+
+
+def test_validate_protein_sequence_rejects_unsupported_residues() -> None:
+    with pytest.raises(ValueError, match="Unsupported residues"):
+        validate_protein_sequence("MKTAXY")
+
+
+def test_validate_protein_sequence_rejects_oversized_sequence() -> None:
+    with pytest.raises(ValueError, match="exceeds the supported maximum"):
+        validate_protein_sequence("A" * 1023)
+
+
+def test_adapter_uses_mock_encoder() -> None:
+    adapter = ProteinLanguageModelAdapter(
+        config=ProteinLanguageModelConfig(model_name="mock-model", model_revision="test", device="cpu"),
+        encoder=MockEncoder(),
+    )
+
+    result = adapter.encode("MKTAYIA")
+    assert result.embedding_dimension == 3
+    assert result.model_name == "mock-model"
+    assert result.sequence == "MKTAYIA"
+
+
+def test_adapter_rejects_empty_sequence() -> None:
+    adapter = ProteinLanguageModelAdapter(
+        config=ProteinLanguageModelConfig(model_name="mock-model", model_revision="test", device="cpu"),
+        encoder=MockEncoder(),
+    )
+
+    with pytest.raises(ValueError, match="cannot be empty"):
+        adapter.encode("   ")

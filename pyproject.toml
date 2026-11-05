@@ -22,6 +22,12 @@ dependencies = [
   "bioimage_quant @ git+https://github.com/contrivancecompanychicago/bioimage_quant.git@master",
 ]
 
+[project.optional-dependencies]
+protein-language-model = [
+  "torch>=2.0.0",
+  "transformers>=4.41.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/contrivancecompanychicago/esmith19-uicbpavls-3d"
 Repository = "https://github.com/contrivancecompanychicago/esmith19-uicbpavls-3d.git"
@@ -31,3 +37,6 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["uicbpavls_3d*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
